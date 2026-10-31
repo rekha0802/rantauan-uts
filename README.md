@@ -203,7 +203,8 @@ kelompok dan bukan bukti bahwa kontribusi tersebut sudah dilakukan.
 |---|---|
 | Rekhanur Faidah | Kontrak REST, Inventory, stok dan Outbox |
 | Nurul Zahra Fatimah | Analisis data, rancangan Import dan mapping produk |
-| Reisya Sahriyatul Fitrri | RabbitMQ, Reporting dan dokumentasi pengujian |
+| Reisya Sahriyatul Fitrri | RabbitMQ, Reporting dan pengujian consumer |
+| Eka Putri | Dokumentasi, pengujian API melalui Postman dan persiapan demo |
 
 Riwayat commit harus mencerminkan pekerjaan masing-masing yang benar-benar
 dilakukan. Jangan membuat commit atas nama anggota lain untuk mengarang kontribusi.
