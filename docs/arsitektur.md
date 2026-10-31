@@ -4,8 +4,8 @@ Inventory dan Reporting sudah berjalan.
 Import Service masih direncanakan.
 
 ~~~mermaid
-flowchart LR
-    A["curl / Swagger"] -->|"REST: berjalan"| I["Inventory: berjalan"]
+flowchart TB
+    A["Postman / Swagger"] -->|"REST: berjalan"| I["Inventory: berjalan"]
     F["File simulasi"] -.-> M["Import: direncanakan"]
     M -.->|"REST: direncanakan"| I
     I --> D1[("DB Inventory: produk, operasi, outbox")]
