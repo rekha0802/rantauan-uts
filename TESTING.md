@@ -82,7 +82,7 @@ stok awal atau laporan penjualan nyata owner.
   dan broker tetap hidup belum dicatat terpisah. Buffering satu event sudah
   terlihat; uji tiga event P06 memakai broker mati juga.
 - Urutan global banyak relay/consumer dan operasi stok bersamaan belum diuji.
-- Rangkaian setup dari checkout bersih atau laptop anggota lain belum diuji.
+- Clone bersih pada komputer yang sama berhasil diuji; lihat catatan 31 Oktober 2026. Laptop anggota lain belum diuji.
 - Review kontrak anggota lain dan kontribusi commit belum diverifikasi.
 - Import, parser file owner, status pesanan, retur dan harga owner belum diuji.
 - Tidak ada pengujian dashboard, autentikasi atau deployment cluster.
@@ -92,3 +92,24 @@ stok awal atau laporan penjualan nyata owner.
 Tuliskan hasil aktual setelah perintah dijalankan. Jangan mengisi hasil dengan
 ekspektasi, membuat log lama, atau mengubah jumlah agar cocok dengan contoh.
 Simpan screenshot hanya dari data sintetis, tanpa password, APP_KEY atau .env.
+
+## Uji clone bersih — 31 Oktober 2026
+
+Pengujian dilakukan dari clone GitHub pada komputer Ubuntu WSL2 yang sama,
+dalam folder rantauan-cek-setup, dengan konfigurasi lokal, nama proyek
+Compose, volume dan port terpisah dari proyek utama.
+
+- Dependensi kedua layanan berhasil diinstal dari composer.lock.
+- Pemeriksaan platform PHP 8.5.11 berhasil pada kedua layanan.
+- Migrasi Inventory dan Reporting berhasil.
+- Migrasi Reporting sempat gagal karena MySQL belum siap; berhasil setelah healthy.
+- GET produk pada port 8010: 200 dengan data kosong sebelum produk uji dibuat.
+- Inventory: 29 test lulus, 179 assertions.
+- Reporting: 7 test lulus, 14 assertions.
+- Produk sintetis CEK-001 dibuat: 201 dan Location.
+- Penjualan satu unit: 200, stok berubah dari 10 menjadi 9.
+- Relay mengirim satu event; jurnal Reporting untuk operasi tersebut berjumlah 1.
+- Container pengujian dihentikan setelah pemeriksaan; data tidak dihapus.
+
+Hasil ini membuktikan setup clone pada komputer yang sama, bukan pengujian
+pada komputer kedua. Port pengujian berbeda dari port default README.

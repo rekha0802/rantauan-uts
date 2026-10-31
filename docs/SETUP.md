@@ -11,20 +11,20 @@ Mengubah template tidak memerlukan mengganti .env aktif yang sudah berfungsi.
 - Port host 8000, 8001, 3309, 3310, 5175, 5176, 5673, 15673, dan 8082 bila
   memakai Swagger, tersedia atau disesuaikan bersama dokumentasinya.
 - Koneksi internet untuk mengunduh image/dependensi.
-- Repository kelompok tersedia; URL aktual belum dicantumkan saat panduan dibuat.
+- Repository kelompok: https://github.com/rekha0802/rantauan-uts
 
 ## 2. Dapatkan source
 
-Pada komputer/checkout baru, ganti URL_REPOSITORY_KELOMPOK dengan URL sebenarnya:
+Pada komputer/checkout baru, ganti https://github.com/rekha0802/rantauan-uts.git dengan URL sebenarnya:
 
 ~~~bash
-git clone URL_REPOSITORY_KELOMPOK ~/rantauan-uts
+git clone https://github.com/rekha0802/rantauan-uts.git ~/rantauan-uts
 cd ~/rantauan-uts
 ~~~
 
-Jika belum ada remote, gunakan salinan source bersih yang disetujui kelompok,
-tanpa .env, vendor, node_modules atau dataset owner. Jangan menimpa folder
-pengembangan yang sudah ada. Belum ada klaim fresh clone telah diuji.
+Jangan menimpa folder pengembangan yang sudah ada. Clone tidak menyertakan
+.env, vendor, node_modules atau dataset owner. Jika menguji pada komputer
+yang sama, gunakan folder, COMPOSE_PROJECT_NAME dan port terpisah.
 
 ## 3. Siapkan .env lokal sebelum menyalakan container
 
@@ -180,9 +180,10 @@ review dan mencatat hasil nyata; jangan mengisi nama/komentar review fiktif.
 
 ## 9. Status verifikasi panduan
 
-Source dan perintah layanan telah dikerjakan pada lingkungan pengembangan.
-Rangkaian setup baru dari repository bersih belum dijalankan pada mesin kedua.
-Catat kendala dan hasil setelah anggota kelompok mencobanya sebelum menyatakan
-README sudah terbukti dapat direproduksi dari nol.
+Pada 31 Oktober 2026, clone bersih pada komputer Ubuntu WSL2 yang sama
+berhasil diuji dengan nama proyek Compose, volume dan port terpisah.
+Instalasi dependensi, pemeriksaan platform, migrasi, API, 36 test dan
+alur event sampai jurnal berhasil. Lihat TESTING.md untuk rinciannya.
+Pengujian pada komputer kedua belum dilakukan.
 
 Referensi umum Sail: https://laravel.com/docs/13.x/sail

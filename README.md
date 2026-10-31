@@ -77,9 +77,9 @@ Feature test memakai SQLite di memori; pengujian manual memakai MySQL.
 Ikuti [panduan SETUP](docs/SETUP.md). Panduan mencakup checkout baru,
 instalasi Composer melalui Docker, konfigurasi lokal dan migrasi.
 
-URL remote repository belum ditentukan dalam dokumen ini. Repository Git lokal
-sudah disiapkan. Belum ada klaim panduan telah diuji pada laptop anggota lain;
-uji reproduksi tersebut perlu dicatat sesudah dilakukan.
+Repository kelompok: https://github.com/rekha0802/rantauan-uts
+Uji clone bersih berhasil pada komputer yang sama dengan port dan volume
+terpisah. Hasil tersedia di TESTING.md. Laptop anggota lain belum diuji.
 
 ## Menjalankan lingkungan yang sudah terpasang
 
@@ -213,9 +213,9 @@ dilakukan. Jangan membuat commit atas nama anggota lain untuk mengarang kontribu
 
 - Review kontrak oleh anggota lain dan pencatatan hasil review.
 - Konfirmasi pembagian tugas dan kontribusi Git.
-- Uji mengikuti README pada checkout bersih/mesin anggota lain.
-- PDF analisis 4–8 halaman, latihan demo dan tautan repository kelompok.
-- Penyelarasan catatan kontrak event dengan subscriber Monitoring tambahan.
+- Uji pada laptop anggota lain; clone bersih pada komputer yang sama sudah berhasil.
+- Review dan finalisasi draf PDF analisis 6 halaman serta latihan demo dengan stopwatch.
+- Kontrak event sudah diselaraskan dengan subscriber Monitoring.
 
 Import, dashboard, autentikasi dan deployment cluster belum diimplementasikan.
 Lingkup berikutnya harus mengikuti instruksi dosen yang tersedia; dokumen ini
