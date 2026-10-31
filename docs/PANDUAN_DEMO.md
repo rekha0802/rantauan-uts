@@ -1,174 +1,152 @@
-# Panduan Demo Checkpoint 1
+# Panduan Demo Checkpoint 1 — RENR Project
 
-Target sekitar empat menit, mengikuti P07. Gunakan data sintetis.
-Ini panduan yang disiapkan; seluruh urutan demo ini belum dilatih dalam satu sesi.
+Target sekitar empat menit, mengikuti P07. Semua transaksi menggunakan data sintetis.
+Langkah API dan event sudah dicoba secara bertahap; durasi seluruh demo dalam satu sesi belum diukur.
 
-## Sebelum giliran: persiapan di luar empat menit
+## Persiapan sebelum giliran
 
-1. Jalankan Inventory, Reporting dan RabbitMQ melalui Sail; pastikan MySQL
-   healthy dan broker ping berhasil. Ikuti README untuk startup.
-2. Jalankan rabbitmq:siapkan dari Inventory.
-3. Buka diagram arsitektur dan Swagger UI. Tidak mengunduh image saat giliran.
-4. Hentikan relay kontinu lain agar hanya satu relay aktif saat demo.
-5. Pastikan tidak ada event lama tertunda yang akan ikut terkirim saat demo.
-   Jika ada, proses dan jelaskan terlebih dahulu; jangan menghapusnya sembarangan.
-6. Siapkan produk DMO-001 berikut. Produk ini sengaja terpisah dari latihan HJB-001.
-7. Pastikan stok DMO-001 minimal 1 dan di bawah 1000000 sebelum latihan ini.
-8. Semua anggota hadir dan membagi bagian penjelasan yang benar-benar dipahami.
+1. Jalankan Inventory, Reporting, dan RabbitMQ dengan Sail sesuai docs/SETUP.md.
+2. Dari Inventory jalankan `./vendor/bin/sail artisan rabbitmq:siapkan`.
+3. Buka Postman dan impor `docs/postman/Rantauan-Checkpoint1.postman_collection.json` jika belum tersedia.
+4. Buka diagram `docs/arsitektur.md`. Siapkan RabbitMQ Management di http://localhost:15673 bila diperlukan.
+5. Pastikan produk DMO-001 tersedia, stok minimal 1 dan kurang dari 1000000. Periksa melalui GET detail di Postman.
+6. Pastikan Outbox tidak memiliki backlog. Proses pesan lama terlebih dahulu, jangan menghapus data untuk demo.
+7. Jalankan hanya satu relay dan satu consumer Reporting untuk jalur demo ini.
+8. Semua anggota hadir. Sepakati bagian penjelasan berdasarkan pemahaman dan pekerjaan yang benar-benar dilakukan.
 
-Periksa produk demo dari terminal Inventory:
+Status terakhir latihan: DMO-001 stok 18. Ini catatan historis, bukan angka tetap untuk demo berikutnya.
+Jika produk belum ada, buat sekali melalui POST produk. Jika stok habis, lakukan restok positif dengan ID operasi baru sebelum giliran dan proses event persiapannya.
+
+### Terminal A — Inventory dan relay
 
 ~~~bash
 cd ~/rantauan-uts/inventory-service
-curl -i http://localhost:8000/api/v1/produk/DMO-001 \
-  -H 'Accept: application/json'
-~~~
-
-Hanya jika produk belum ada (404), buat sekali pada persiapan:
-
-~~~bash
-curl -i -X POST http://localhost:8000/api/v1/produk \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json' \
-  -d '{"sku":"DMO-001","nama":"Produk Simulasi Demo","harga":45000,"stok":20}'
-~~~
-
-Jika SKU sudah ada, gunakan hasil pemeriksaan stoknya. Jangan mengharapkan
-POST berulang menghasilkan 201; SKU duplikat ditolak 422. Bila stok habis,
-lakukan restok positif dengan operation_id baru lewat API sebelum giliran,
-kirim event persiapannya dan pastikan tidak ada Outbox tertunda.
-
-Periksa pesan tertunda:
-
-~~~bash
 ./vendor/bin/sail artisan tinker --execute="dump(App\Models\Outbox::whereNull('dikirim_pada')->count());"
 ~~~
 
-### Terminal A: Inventory
+Harapan sebelum demo: 0 pesan tertunda.
 
-~~~bash
-cd ~/rantauan-uts/inventory-service
-~~~
-
-### Terminal B: consumer Reporting, biarkan berjalan
+### Terminal B — consumer Reporting, biarkan berjalan
 
 ~~~bash
 cd ~/rantauan-uts/reporting-service
 ./vendor/bin/sail artisan reporting:konsumsi
 ~~~
 
-### Terminal C: pemeriksaan Reporting
+Jika consumer gagal membuka queue, periksa kesiapan broker dan jalankan rabbitmq:siapkan dari Inventory sebelum mencoba kembali. Ctrl+C menghentikan consumer; tidak menghapus jurnal yang sudah dicatat.
+
+### Terminal C — pencatatan awal Reporting
 
 ~~~bash
 cd ~/rantauan-uts/reporting-service
 ./vendor/bin/sail artisan tinker --execute="dump(DB::table('jurnal_penjualan')->where('sku_internal', 'DMO-001')->count());"
 ~~~
 
-Catat jumlah sebelum demo. Consumer Monitoring boleh dibuka pada terminal
-tambahan jika ingin bukti dua subscriber, tetapi itu bukan pengganti tiga
-layanan aplikasi pada diagram. Jalur utama demo cukup Reporting.
+Catat jumlah awal. Jumlah setelah transaksi baru berhasil harus bertambah satu.
 
-## Menit 0–1: diagram dan batas sistem
+## Menit 0–1 — arsitektur
 
 Contoh penjelasan:
 
-> Kami merancang Import, Inventory dan Reporting. Inventory serta Reporting
-> sudah berjalan. Import masih direncanakan. REST Inventory diuji melalui curl
-> atau Swagger. Perubahan stok dan event disimpan bersama di Outbox, lalu relay
-> menerbitkan event ke RabbitMQ. Reporting memakai inbox untuk mencegah duplikasi.
+> RENR Project merancang tiga layanan: Import, Inventory, dan Reporting.
+> Inventory dan Reporting sudah berjalan; Import masih direncanakan.
+> Postman mengirim REST ke Inventory. Stok dan event disimpan bersama dalam transaksi database.
+> Relay mengirim event Outbox ke RabbitMQ; Reporting mencatatnya dengan inbox untuk menangani duplikasi.
 
-Jelaskan garis rencana dan jalur yang sudah berjalan. Jangan mengklaim impor
-owner, API marketplace, atau dashboard telah diimplementasikan.
+Monitoring adalah command dalam Reporting, bukan layanan aplikasi ketiga.
+Impor file owner, integrasi langsung API marketplace, dan dashboard belum dibuat.
 
-## Menit 1–3: request, test, event
+## Menit 1–3 — Postman, test, dan event
 
-### A. Satu request berhasil, Terminal A
+### A. GET berhasil
 
-~~~bash
-curl -i http://localhost:8000/api/v1/produk/DMO-001 \
-  -H 'Accept: application/json'
+Di Postman kirim GET http://localhost:8000/api/v1/produk.
+Tunjukkan status 200 dan produk sintetis. Catat stok awal DMO-001.
+
+### B. Galat bisnis
+
+Buka request POST Stok Tidak Cukup — 409. Gunakan header Accept: application/json dan Body raw JSON:
+
+~~~json
+{
+  "operation_id": "{{$guid}}",
+  "perubahan": -1000000,
+  "alasan": "penjualan"
+}
 ~~~
 
-Harapan: 200 dan produk sintetis. Cocokkan dengan OpenAPI.
+URL: http://localhost:8000/api/v1/produk/DMO-001/penyesuaian-stok.
+Tunjukkan status 409, header respons Content-Type: application/problem+json, dan field Problem Details.
+Stok harus lebih kecil dari 1000000 agar skenario benar-benar ditolak.
 
-### B. Satu galat bisnis, Terminal A
+### C. Feature test
 
-Perintah pembuat UUID berikut memuat autoloader, bukan password.
-Gunakan ID baru agar tidak berbenturan dengan riwayat latihan.
-
-~~~bash
-gagal_id=$(./vendor/bin/sail php -r 'require "vendor/autoload.php"; echo Illuminate\Support\Str::uuid();')
-curl -i -X POST \
-  http://localhost:8000/api/v1/produk/DMO-001/penyesuaian-stok \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json' \
-  -d "{\"operation_id\":\"$gagal_id\",\"perubahan\":-1000000,\"alasan\":\"penjualan\"}"
-~~~
-
-Harapan: 409 dengan application/problem+json. Request ini tidak menghasilkan
-perubahan stok atau event. Besaran pengurangan bergantung kondisi persiapan:
-stok harus lebih kecil dari 1000000 agar benar-benar tidak cukup.
-
-### C. Jalankan feature test, Terminal A
+Di Terminal A jalankan:
 
 ~~~bash
 ./vendor/bin/sail artisan test
 ~~~
 
-Hasil terakhir Inventory: 29 passed, 179 assertions. Gunakan hasil aktual
-yang muncul pada hari demo. Bila diminta, jalankan juga seluruh test Reporting
-di Terminal C; hasil terakhir 7 passed, 14 assertions.
+Hasil terakhir terverifikasi: Inventory 29 passed / 179 assertions; Reporting 7 passed / 14 assertions.
+Gunakan hasil aktual hari demo. Bila diminta, jalankan test Reporting di Terminal C.
 
-### D. Kirim satu perubahan stok dan event, Terminal A
+### D. Penjualan baru dari Postman
+
+Request POST Penjualan Berhasil — 200 memakai URL penyesuaian stok yang sama.
+Sebelum tiap sesi demo, buat UUID baru di Terminal A:
 
 ~~~bash
-demo_id=$(./vendor/bin/sail php -r 'require "vendor/autoload.php"; echo Illuminate\Support\Str::uuid();')
-curl -i -X POST \
-  http://localhost:8000/api/v1/produk/DMO-001/penyesuaian-stok \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json' \
-  -d "{\"operation_id\":\"$demo_id\",\"perubahan\":-1,\"alasan\":\"penjualan\"}"
+cat /proc/sys/kernel/random/uuid
 ~~~
 
-Jika respons 200, jalankan relay:
+Salin hasilnya ke operation_id pada Body berikut, menggantikan placeholder:
+
+~~~json
+{
+  "operation_id": "GANTI_DENGAN_UUID_BARU",
+  "perubahan": -1,
+  "alasan": "penjualan"
+}
+~~~
+
+Jangan gunakan placeholder secara literal. Untuk pengujian ulang operasi yang sama, simpan UUID yang sudah dipilih dan jangan mengubah Body.
+ID 31000000-0000-4000-8000-000000000001 dalam collection sudah dipakai pada database latihan; menggunakannya lagi mengembalikan hasil lama, bukan penjualan baru.
+
+Klik Send sekali. Harapan: 200 dan stok berkurang satu dari stok awal.
+Jika hasil tidak jelas, periksa dulu; jangan langsung mengirim operasi baru.
+
+Di Terminal A jalankan:
 
 ~~~bash
 ./vendor/bin/sail artisan outbox:relay
 ~~~
 
-Harapan: 1 pesan terkirim jika persiapan memastikan tidak ada backlog.
-Terminal B menampilkan Dicatat: event diikuti UUID.
+Harapan: 1 pesan terkirim jika tidak ada backlog. Terminal B menampilkan Dicatat: event beserta UUID.
+Di Terminal C jalankan kembali query jumlah jurnal DMO-001. Harapan: bertambah satu dari jumlah awal.
 
-Periksa Terminal C:
-
-~~~bash
-./vendor/bin/sail artisan tinker --execute="dump(DB::table('jurnal_penjualan')->where('sku_internal', 'DMO-001')->count());"
-~~~
-
-Jumlah jurnal demo seharusnya bertambah satu dari catatan sebelum demo.
-Request dan relay tidak dijalankan ulang dengan UUID baru untuk mengatasi
-ketidakpastian respons; periksa hasil sebelum mengulang efek bisnis.
-
-## Menit 3–4: tanya jawab setiap anggota
+## Menit 3–4 — tanya jawab anggota
 
 Pertanyaan latihan, bukan bocoran pertanyaan dosen:
 
-- Apa fungsi route, controller, model dan Resource pada request tadi?
-- Mengapa stok tidak cukup menghasilkan 409 dan field invalid 422?
-- Mengapa update stok dan pencatatan Outbox harus satu transaksi?
+- Apa tugas route, controller, model, dan Resource?
+- Mengapa stok tidak cukup menghasilkan 409 dan input invalid 422?
+- Mengapa stok dan Outbox harus satu transaksi?
 - Apa perbedaan operation_id dan message_id?
-- Kapan consumer mengirim ack dan kapan pesan menuju DLQ?
-- Mengapa dua subscriber memakai queue berbeda?
-- Mengapa dataset owner belum dipakai sebagai transaksi demo?
-- Bagian mana yang sudah berjalan dan mana yang belum dibuat?
+- Mengapa ack dilakukan setelah penyimpanan berhasil? Kapan pesan menuju DLQ?
+- Mengapa subscriber memakai queue berbeda?
+- Mengapa data owner tidak dipakai sebagai transaksi demo?
+- Layanan mana yang berjalan dan mana yang masih direncanakan?
 
-Jawaban setiap anggota harus sesuai pekerjaan dan pemahaman sebenarnya.
-Gunakan riwayat commit dan catatan review yang nyata, bukan pembagian fiktif.
+## Bukti tambahan jika diminta
+
+- POST produk baru: 201 dan Location. PST-001 dan PST-002 sudah dipakai; pilih SKU baru yang belum tersedia, sesuai pola tiga huruf, tanda hubung, tiga angka. POST ulang SKU yang sama menghasilkan 422.
+- GET produk tidak ada: 404 Problem Details.
+- Tanpa operation_id: 422 Problem Details.
+- Retry operasi: kirim Body penjualan yang sama dengan UUID tetap. Hasil operasi lama dikembalikan; periksa stok aktual melalui GET detail, jurnal operasi tetap satu, dan tidak ada Outbox baru. Respons retry merupakan snapshot operasi, sehingga stok aktual dapat berbeda bila transaksi lain terjadi setelahnya.
+- Broker mati lalu pulih, replay event, publish dari Management UI, DLQ, dan dua subscriber sudah dicoba sebelumnya. Tunjukkan bukti terkait bila diminta; jangan memaksakan semuanya ke empat menit.
 
 ## Setelah latihan
 
-Catat durasi aktual dan hasil. Jika melebihi empat menit, ringkas penjelasan
-dan siapkan terminal; jangan menghapus bukti atau mengaku test telah dijalankan.
-Simpan bukti hanya dari data sintetis. Password dan .env tidak dibuka saat
-berbagi layar. Skenario broker mati, replay, UI publish dan DLQ dapat ditunjukkan
-sebagai bukti tambahan jika diminta, bukan dipaksakan semua ke empat menit.
+Ukur durasi satu sesi dan catat hasil aktual. Jangan menyebut latihan empat menit selesai sebelum benar-benar diukur.
+Simpan bukti data sintetis saja. Jangan membuka .env, password, atau token saat berbagi layar.
+Pembagian tugas README masih perlu disepakati kelompok. Riwayat commit dan review harus mencerminkan kontribusi sebenarnya.
