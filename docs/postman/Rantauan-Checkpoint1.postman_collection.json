@@ -164,6 +164,41 @@
         }
       },
       "response": []
+    },
+    {
+      "name": "POST Tambah Produk — 201",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"sku\": \"PST-002\",\r\n  \"nama\": \"Produk Simulasi Postman\",\r\n  \"harga\": 45000,\r\n  \"stok\": 10\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/produk",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "v1",
+            "produk"
+          ]
+        }
+      },
+      "response": []
     }
   ]
 }
