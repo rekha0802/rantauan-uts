@@ -1,7 +1,7 @@
 # Rantau.an Hijab — Checkpoint 1
 
 Proyek kelompok Integrasi Sistem dan Komputasi Awan, RENR Project.
-Dokumentasi diperbarui 27 Oktober 2026.
+Dokumentasi diperbarui 1 November 2026.
 
 ## Tujuan dan ruang lingkup
 
@@ -53,7 +53,7 @@ Inventory dan Reporting mempunyai database masing-masing. Command Monitoring
 berada dalam proyek Reporting sebagai subscriber demonstrasi, bukan layanan
 aplikasi ketiga yang berdiri sendiri.
 
-REST dari curl/Swagger menuju Inventory sudah berjalan. REST Import ke Inventory
+REST dari Postman, curl atau Swagger menuju Inventory sudah berjalan. REST Import ke Inventory
 masih direncanakan. Jalur asinkron yang berjalan:
 
 ~~~text
@@ -196,26 +196,39 @@ tercatat; tampilnya Swagger dan lulus lint tidak menggantikan review manusia.
 
 ## Kelompok dan pembagian tugas
 
-Nama berdasarkan dokumen Tugas 3. Usulan pembagian berikut perlu dikonfirmasi
-kelompok dan bukan bukti bahwa kontribusi tersebut sudah dilakukan.
+Kelompok telah menetapkan pembagian tanggung jawab berikut.
+Penugasan mencakup pekerjaan Checkpoint 1 dan rancangan pengembangan selanjutnya.
 
-| Anggota | Usulan fokus |
+| Anggota | Tanggung jawab |
 |---|---|
 | Rekhanur Faidah | Kontrak REST, Inventory, stok dan Outbox |
 | Nurul Zahra Fatimah | Analisis data, rancangan Import dan mapping produk |
 | Reisya Sahriyatul Fitrri | RabbitMQ, Reporting dan pengujian consumer |
 | Eka Putri | Dokumentasi, pengujian API melalui Postman dan persiapan demo |
 
-Riwayat commit harus mencerminkan pekerjaan masing-masing yang benar-benar
-dilakukan. Jangan membuat commit atas nama anggota lain untuk mengarang kontribusi.
+Anggota kelompok telah memperoleh akses collaborator pada repository.
+Setiap anggota menggunakan akun sendiri untuk mencatat perubahan yang dikerjakan.
+Akses collaborator berbeda dari bukti instalasi layanan pada komputer anggota.
 
-## Kelengkapan Checkpoint 1 yang masih dikerjakan
+## Kelengkapan pengumpulan Checkpoint 1
 
-- Review kontrak oleh anggota lain dan pencatatan hasil review.
-- Konfirmasi pembagian tugas dan kontribusi Git.
-- Uji pada laptop anggota lain; clone bersih pada komputer yang sama sudah berhasil.
-- Review dan finalisasi draf PDF analisis 6 halaman serta latihan demo dengan stopwatch.
-- Kontrak event sudah diselaraskan dengan subscriber Monitoring.
+- Dokumen analisis final 7 halaman, Times New Roman dan spasi 1,15.
+- Slides presentasi final 21 slide, termasuk identitas anggota dan pembagian tugas.
+- Repository kode dengan OpenAPI, kontrak event, feature test dan panduan setup.
+- [Collection Postman](docs/postman/Rantauan-Checkpoint1.postman_collection.json) untuk pengujian API.
+- Kontrak event telah diselaraskan dengan subscriber Monitoring.
+- Uji clone bersih pada komputer yang sama telah berhasil.
+
+PDF dan PPT disiapkan sebagai berkas pengumpulan terpisah. Bagian ini tidak
+menyatakan bahwa kedua berkas tersebut sudah diunggah ke repository.
+
+## Persiapan demonstrasi
+
+Gunakan [panduan demo](docs/PANDUAN_DEMO.md), collection Postman dan hasil test.
+Siapkan Docker Desktop, terminal Ubuntu, Postman serta RabbitMQ Management.
+Gunakan data sintetis dan identitas operasi baru untuk transaksi baru.
+Hasil review kontrak anggota lain dan durasi latihan utuh belum dicatat di sini.
+Uji instalasi pada komputer anggota lain belum termasuk bukti yang tersedia.
 
 Import, dashboard, autentikasi dan deployment cluster belum diimplementasikan.
 Lingkup berikutnya harus mengikuti instruksi dosen yang tersedia; dokumen ini
