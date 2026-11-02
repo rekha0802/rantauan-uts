@@ -1,0 +1,111 @@
+{
+  "waktu_utc": "2026-11-02T07:26:43.483072+00:00",
+  "jenis": "HTTP read-only pada layanan lokal, data simulasi",
+  "hasil": [
+    {
+      "skenario": "limit_satu",
+      "request": "GET /api/v1/produk?limit=1",
+      "status": 200,
+      "content_type": "application/json",
+      "lulus": true,
+      "response": {
+        "data": [
+          {
+            "sku": "DMO-001",
+            "nama": "Produk Simulasi Demo",
+            "harga": 45000,
+            "stok": 17,
+            "diperbarui_pada": "2026-10-31T04:39:57+00:00"
+          }
+        ]
+      }
+    },
+    {
+      "skenario": "limit_nol",
+      "request": "GET /api/v1/produk?limit=0",
+      "status": 422,
+      "content_type": "application/problem+json",
+      "lulus": true,
+      "response": {
+        "type": "https://rantauan.test/problem/validasi-gagal",
+        "title": "Isi permintaan tidak valid",
+        "status": 422,
+        "detail": "Satu atau lebih field tidak memenuhi kontrak.",
+        "instance": "/api/v1/produk",
+        "errors": {
+          "limit": [
+            "The limit field must be at least 1."
+          ]
+        }
+      }
+    },
+    {
+      "skenario": "limit_101",
+      "request": "GET /api/v1/produk?limit=101",
+      "status": 422,
+      "content_type": "application/problem+json",
+      "lulus": true,
+      "response": {
+        "type": "https://rantauan.test/problem/validasi-gagal",
+        "title": "Isi permintaan tidak valid",
+        "status": 422,
+        "detail": "Satu atau lebih field tidak memenuhi kontrak.",
+        "instance": "/api/v1/produk",
+        "errors": {
+          "limit": [
+            "The limit field must not be greater than 100."
+          ]
+        }
+      }
+    },
+    {
+      "skenario": "limit_teks",
+      "request": "GET /api/v1/produk?limit=teks",
+      "status": 422,
+      "content_type": "application/problem+json",
+      "lulus": true,
+      "response": {
+        "type": "https://rantauan.test/problem/validasi-gagal",
+        "title": "Isi permintaan tidak valid",
+        "status": 422,
+        "detail": "Satu atau lebih field tidak memenuhi kontrak.",
+        "instance": "/api/v1/produk",
+        "errors": {
+          "limit": [
+            "The limit field must be an integer."
+          ]
+        }
+      }
+    },
+    {
+      "skenario": "sku_tidak_ada",
+      "request": "GET /api/v1/produk/ZZZ-999",
+      "status": 404,
+      "content_type": "application/problem+json",
+      "lulus": true,
+      "response": {
+        "type": "https://rantauan.test/problem/tidak-ditemukan",
+        "title": "Sumber daya tidak ditemukan",
+        "status": 404,
+        "detail": "Tidak ada sumber daya pada alamat ini.",
+        "instance": "/api/v1/produk/ZZZ-999"
+      }
+    },
+    {
+      "skenario": "detail_sku_tersedia",
+      "request": "GET /api/v1/produk/DMO-001",
+      "status": 200,
+      "content_type": "application/json",
+      "lulus": true,
+      "response": {
+        "data": {
+          "sku": "DMO-001",
+          "nama": "Produk Simulasi Demo",
+          "harga": 45000,
+          "stok": 17,
+          "diperbarui_pada": "2026-10-31T04:39:57+00:00"
+        }
+      }
+    }
+  ]
+}

@@ -136,7 +136,7 @@ Password dan APP_KEY disimpan dalam .env lokal dan tidak dicantumkan di README.
 
 ## API dan kontrak
 
-[OpenAPI Inventory](inventory-service/openapi.yaml), versi rancangan 0.3.0.
+[OpenAPI Inventory](inventory-service/openapi.yaml), versi dokumentasi 0.4.0.
 
 | Operasi | Hasil utama |
 |---|---|
@@ -162,6 +162,8 @@ dan DLQ reporting.penjualan.dlq melalui rantauan.dlx.
 
 ## Pengujian
 
+[Matriks bukti pengujian lengkap](docs/BUKTI_PENGUJIAN_LENGKAP.md) ([PDF lampiran](docs/BUKTI_PENGUJIAN_LENGKAP.pdf)) memuat limit, SKU, seluruh operasi REST, validasi, retry, Outbox dan integrasi event beserta sumber test dan log hasil aktual.
+
 Lihat [catatan pengujian terpusat](TESTING.md) dan
 [panduan demo empat menit](docs/PANDUAN_DEMO.md).
 
@@ -177,7 +179,7 @@ Hasil terakhir yang tercatat dalam pengerjaan, bukan janji hasil mesin baru:
 
 - Inventory: 29 passed, 179 assertions.
 - Reporting: 7 passed, 14 assertions.
-- Spectral: tidak ada error pada kontrak versi rancangan 0.3.0.
+- Spectral: tidak ada error pada kontrak versi dokumentasi 0.4.0 (pemeriksaan 2 November 2026).
 - Uji manual: dua subscriber, replay, DLQ dan x-death, UI publish,
   broker mati/pulih, dan urutan tiga event pada satu relay/consumer.
 

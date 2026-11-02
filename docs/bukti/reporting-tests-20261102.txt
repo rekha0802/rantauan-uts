@@ -1,0 +1,16 @@
+
+   PASS  Tests\Unit\ExampleTest
+  ✓ that true is true
+
+   PASS  Tests\Feature\CatatPenjualanTest
+  ✓ event penjualan dicatat                                              0.37s
+  ✓ event duplikat tidak dicatat lagi                                    0.04s
+  ✓ payload tanpa field wajib ditolak                                    0.03s
+  ✓ penjualan dengan perubahan positif ditolak                           0.03s
+  ✓ restok tidak dicatat sebagai penjualan                               0.02s
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ the application returns a successful response                        0.10s
+
+  Tests:    7 passed (14 assertions)
+  Duration: 0.80s

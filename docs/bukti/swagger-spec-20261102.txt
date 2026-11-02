@@ -1,0 +1,5 @@
+GET http://localhost:8082/openapi.yaml
+HTTP 200
+info.version: 0.4.0
+4 operasi HTTP. Parameter limit dan sku tersedia.
+File Swagger cocok dengan kontrak yang diperbarui.

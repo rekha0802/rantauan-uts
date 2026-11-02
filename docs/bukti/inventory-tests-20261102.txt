@@ -1,0 +1,56 @@
+
+   PASS  Tests\Unit\ExampleTest
+  ✓ that true is true
+
+   PASS  Tests\Unit\StokDisesuaikanTest
+  ✓ payload sesuai kontrak event                                         0.46s
+  ✓ membaca payload tidak mengganti identitas event                      0.01s
+
+   PASS  Tests\Feature\ArahStokApiTest
+  ✓ penjualan positif ditolak tanpa efek                                 0.23s
+  ✓ restok negatif ditolak tanpa efek                                    0.03s
+  ✓ restok positif diterima                                              0.03s
+
+   PASS  Tests\Feature\DetailProdukApiTest
+  ✓ produk yang ada mengembalikan 200                                    0.03s
+  ✓ sku tidak ditemukan mengembalikan 404                                0.02s
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ the application returns a successful response                        0.06s
+
+   PASS  Tests\Feature\KontrakStokApiTest
+  ✓ penyesuaian sku tidak ada menghasilkan 404                           0.03s
+  ✓ tanpa operation id ditolak tanpa efek                                0.02s
+
+   PASS  Tests\Feature\LimitProdukApiTest
+  ✓ limit membatasi produk dan tetap urut sku                            0.03s
+  ✓ tanpa limit tetap menampilkan semua produk                           0.02s
+  ✓ limit tidak valid menghasilkan 422                                   0.03s
+
+   PASS  Tests\Feature\OutboxTest
+  ✓ penjualan mencatat event tertunda                                    0.04s
+  ✓ stok tidak cukup tidak mencatat event                                0.02s
+  ✓ operasi diulang tidak membuat event baru                             0.03s
+  ✓ outbox gagal membatalkan perubahan stok                              0.05s
+
+   PASS  Tests\Feature\ProdukApiTest
+  ✓ daftar produk kosong mengembalikan 200                               0.03s
+
+   PASS  Tests\Feature\RelayOutboxTest
+  ✓ relay mengirim lalu menandai pesan                                   0.03s
+  ✓ pesan terkirim tidak dikirim ulang                                   0.02s
+  ✓ broker gagal pesan tetap menunggu                                    0.02s
+
+   PASS  Tests\Feature\StokApiTest
+  ✓ penjualan mengurangi stok                                            0.03s
+  ✓ stok tidak cukup ditolak                                             0.02s
+  ✓ perubahan nol ditolak                                                0.03s
+  ✓ operasi diulang tidak memotong stok lagi                             0.03s
+  ✓ operation id sama dengan payload berbeda ditolak                     0.03s
+
+   PASS  Tests\Feature\TambahProdukApiTest
+  ✓ produk baru mengembalikan 201 dan location                           0.04s
+  ✓ produk tanpa nama ditolak dengan 422                                 0.02s
+
+  Tests:    29 passed (179 assertions)
+  Duration: 1.82s

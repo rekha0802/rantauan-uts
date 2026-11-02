@@ -1,0 +1,3 @@
+(node:1) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `spectral --trace-deprecation ...` to show where the warning was created)
+No results with a severity of 'error' found!

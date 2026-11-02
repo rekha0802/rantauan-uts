@@ -1,41 +1,126 @@
 openapi: 3.1.0
 info:
   title: Inventory Service Rantau.an Hijab
-  version: 0.3.0
-  description: |
-    Rancangan awal API produk dan stok internal.
-    Pengembangan menggunakan data simulasi, bukan data owner.
+  version: 0.4.0
+  description: 'Dokumentasi API Inventory yang sudah diimplementasikan oleh RENR Project.
+
+    Data pengujian seluruhnya sintetis. Import file owner, mapping otomatis, pembatalan/retur dan pendapatan belum
+    diimplementasikan.
+
+
+    ## Fitur yang dapat diuji
+
+    | Fitur | Buka operasi | Masukan / hasil |
+
+    |---|---|---|
+
+    | Daftar dan urutan SKU | GET /v1/produk | Tanpa limit: seluruh produk, urut SKU |
+
+    | Limit produk | GET /v1/produk > Parameters | limit=1 membatasi hasil; 1–100 valid |
+
+    | Detail berdasarkan SKU | GET /v1/produk/{sku} | SKU tersedia 200, tidak ada 404 |
+
+    | Pembuatan dan SKU unik | POST /v1/produk | 201 + Location; format/duplikat 422 |
+
+    | Penjualan, restok, koreksi | POST /v1/produk/{sku}/penyesuaian-stok | Pilih contoh pada Request body |
+
+    | Validasi arah dan field | POST penyesuaian stok | 422, Problem Details |
+
+    | Stok tidak cukup | POST penyesuaian stok | 409 tanpa perubahan stok/event |
+
+    | Retry dan konflik ID | POST penyesuaian stok | Isi sama 200 snapshot lama; isi berbeda 409 |
+
+
+    Klik nama operasi, lalu **Try it out**. Parameter limit dan SKU berada di **Parameters**, bukan endpoint terpisah.
+
+    Contoh respons di bagian Responses adalah dokumentasi, bukan bukti bahwa request sudah dijalankan.
+
+    Gunakan UUID baru untuk operasi baru dan UUID yang tetap untuk retry. Contoh waktu/stok bukan keadaan database
+    saat ini.
+
+
+    ## Integrasi asinkron yang sudah dibuat
+
+    Perubahan stok, ledger dan Outbox disimpan dalam satu transaksi. Relay outbox:relay mengirim StokDisesuaikan
+
+    ke rantauan.events dengan routing key stok.penjualan.v1, stok.restok.v1 atau stok.koreksi.v1.
+
+    Reporting menerima penjualan pada reporting.penjualan; Monitoring memakai monitoring.stok (stok.*.v1).
+
+    Reporting commit inbox/jurnal sebelum ack, melewati duplikat, dan mengalihkan payload invalid ke reporting.penjualan.dlq.
+
+    Monitoring adalah command dalam Reporting, bukan layanan ketiga. Monitoring tidak memiliki DLQ.
+
+    Broker gagal: event tetap tertunda di Outbox. Pesan dapat berulang, sehingga consumer idempoten.
+
+    Perintah relay/consumer, broker mati dan DLQ diuji dari terminal/RabbitMQ, bukan endpoint HTTP tambahan.
+
+
+    ## Dokumen bukti
+
+    [Matriks dan langkah uji lengkap](https://github.com/rekha0802/rantauan-uts/blob/master/docs/BUKTI_PENGUJIAN_LENGKAP.md)
+
+
+    [Test Inventory](https://github.com/rekha0802/rantauan-uts/tree/master/inventory-service/tests)
+
+
+    [Kontrak event](https://github.com/rekha0802/rantauan-uts/blob/master/inventory-service/docs/kontrak-event.md)
+
+    '
   contact:
     name: RENR Project
-
 servers:
-  - url: http://localhost:8000/api
-    description: Lingkungan lokal Laravel Sail
-
+- url: http://localhost:8000/api
+  description: Lingkungan lokal Laravel Sail
 tags:
-  - name: Produk
-    description: Pengelolaan produk dan stok internal
-
+- name: Produk
+  description: Pengelolaan produk dan stok internal
 paths:
   /v1/produk:
     get:
-      tags: [Produk]
+      tags:
+      - Produk
       operationId: daftarProduk
-      summary: Melihat daftar produk
-      description: |
-        Produk diurutkan berdasarkan SKU.
+      summary: Daftar produk dan limit (1–100), urut SKU
+      description: 'Produk diurutkan berdasarkan SKU.
+
         Tanpa parameter limit, seluruh produk ditampilkan.
+
         Jika diberikan, limit harus integer antara 1 dan 100.
+
+
+
+        **Langkah:** Try it out → isi limit=1 → Execute. Produk tetap diurutkan menurut SKU.
+
+        Limit membatasi jumlah hasil, bukan halaman/pagination, filter SKU, atau total stok.
+
+        Kosongkan parameter untuk daftar lengkap. Nilai 0, 101, negatif, pecahan, teks atau kosong yang dikirim
+        ditolak 422.
+
+        Swagger dapat memblokir nilai invalid sebelum HTTP terkirim. Gunakan curl pada dokumen bukti untuk menguji
+        validasi backend.
+
+        Test: LimitProdukApiTest (3 skenario) dan ProdukApiTest.'
       parameters:
-        - name: limit
-          in: query
-          required: false
-          description: Batas jumlah produk yang ditampilkan
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-          example: 10
+      - name: limit
+        in: query
+        required: false
+        description: 'Opsional. Integer 1–100. Tanpa parameter: semua produk. Ini batas jumlah hasil, bukan endpoint
+          baru.'
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        examples:
+          satu:
+            summary: Satu produk, urut SKU
+            value: 1
+          sepuluh:
+            summary: Maksimal 10 produk
+            value: 10
+          maksimum:
+            summary: Batas tertinggi 100
+            value: 100
       responses:
         '200':
           description: Daftar produk berhasil ditampilkan
@@ -43,33 +128,60 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [data]
+                required:
+                - data
                 properties:
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/Produk'
+              examples:
+                kosong:
+                  $ref: '#/components/examples/DaftarKosong'
+                limitSatu:
+                  $ref: '#/components/examples/DaftarLimitSatu'
+                tanpaLimit:
+                  $ref: '#/components/examples/DaftarSemua'
         '422':
           description: Parameter limit tidak valid
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-
+              examples:
+                limitNol:
+                  $ref: '#/components/examples/LimitNol'
+                limitBesar:
+                  $ref: '#/components/examples/LimitBesar'
+                limitTeks:
+                  $ref: '#/components/examples/LimitTeks'
     post:
-      tags: [Produk]
+      tags:
+      - Produk
       operationId: tambahProduk
       summary: Membuat produk internal
-      description: |
-        SKU harus unik. SKU, nama, dan harga wajib diisi.
-        Stok bernilai 0 jika tidak dikirim.
-        Data tidak valid atau SKU yang sudah digunakan menghasilkan 422.
+      description: "SKU harus unik. SKU, nama, dan harga wajib diisi.\nStok bernilai 0 jika tidak dikirim.\nData\
+        \ tidak valid atau SKU yang sudah digunakan menghasilkan 422.\n\n\nSKU internal format tiga huruf kapital,\
+        \ tanda minus, tiga digit (contoh HJB-001).\nNama 1–120 karakter. Harga integer >=0 (rupiah master simulasi,\
+        \ bukan omzet). Stok integer >=0 dan default 0.\nPilih contoh request di bawah. Gunakan SKU baru untuk 201;\
+        \ request yang sama dikirim lagi ditolak 422.\nContoh invalid bukan kontrak input yang diterima; Swagger\
+        \ bisa menolak sebelum request terkirim.\nTest: TambahProdukApiTest. Harga transaksi owner, autentikasi\
+        \ dan update/hapus produk tidak termasuk endpoint ini.\n\n## Skenario penolakan 422\nContoh berikut sengaja\
+        \ invalid untuk uji negatif. Edit Request body secara manual. Jika UI memblokir, gunakan curl/test pada\
+        \ dokumen bukti.\n\n### Uji invalid: nama wajib, 422\n```json\n{\n  \"sku\": \"HJB-003\",\n  \"harga\":\
+        \ 45000\n}\n```\n\n### Uji invalid: format SKU salah, 422\n```json\n{\n  \"sku\": \"hjb1\",\n  \"nama\"\
+        : \"Produk Simulasi\",\n  \"harga\": 45000\n}\n```"
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/TambahProduk'
+            examples:
+              lengkap:
+                $ref: '#/components/examples/ProdukLengkap'
+              stokDefault:
+                $ref: '#/components/examples/ProdukDefault'
       responses:
         '201':
           description: Produk berhasil dibuat
@@ -84,31 +196,60 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [data]
+                required:
+                - data
                 properties:
                   data:
                     $ref: '#/components/schemas/Produk'
+              examples:
+                lengkap:
+                  $ref: '#/components/examples/ProdukDibuat'
+                default:
+                  $ref: '#/components/examples/ProdukStokNol'
         '422':
           description: Data tidak valid atau SKU sudah digunakan
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-
+              examples:
+                nama:
+                  $ref: '#/components/examples/NamaWajib'
+                skuDuplikat:
+                  $ref: '#/components/examples/SkuDuplikat'
+                skuFormat:
+                  $ref: '#/components/examples/SkuFormat'
   /v1/produk/{sku}:
     get:
-      tags: [Produk]
+      tags:
+      - Produk
       operationId: detailProduk
-      summary: Melihat detail satu produk
-      description: Mengembalikan produk berdasarkan SKU internal.
+      summary: Detail produk berdasarkan SKU internal
+      description: 'Isi Parameters > sku dengan SKU produk yang sudah dibuat, contoh HJB-001. Respons 200 berisi
+        satu produk.
+
+        SKU yang tidak ada menghasilkan 404 Problem Details, termasuk format SKU yang tidak cocok dengan produk
+        tersimpan.
+
+        Pencarian path bersifat tepat berdasarkan nilai SKU, bukan pencarian nama atau mapping marketplace.
+
+        Test: DetailProdukApiTest. Baca stok terkini melalui GET ini; retry penyesuaian mengembalikan snapshot operasi
+        lama.'
       parameters:
-        - name: sku
-          in: path
-          required: true
-          description: SKU internal produk yang dicari
-          schema:
-            type: string
-          example: HJB-001
+      - name: sku
+        in: path
+        required: true
+        description: 'Wajib: SKU internal produk yang tersimpan. Contoh HJB-001. Ini parameter path, bukan endpoint
+          terpisah.'
+        schema:
+          type: string
+        examples:
+          tersedia:
+            summary: Produk contoh (buat dahulu)
+            value: HJB-001
+          tidakAda:
+            summary: Uji 404 jika SKU belum ada
+            value: HJB-999
       responses:
         '200':
           description: Produk ditemukan
@@ -116,86 +257,84 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [data]
+                required:
+                - data
                 properties:
                   data:
                     $ref: '#/components/schemas/Produk'
+              examples:
+                produk:
+                  $ref: '#/components/examples/DetailProduk'
         '404':
           description: Produk tidak ditemukan
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-              example:
-                type: https://rantauan.test/problem/tidak-ditemukan
-                title: Produk tidak ditemukan
-                status: 404
-                detail: Tidak ada produk dengan SKU tersebut.
-                instance: /api/v1/produk/HJB-999
-
+              examples:
+                tidakAda:
+                  $ref: '#/components/examples/SkuTidakAda'
   /v1/produk/{sku}/penyesuaian-stok:
     post:
-      tags: [Produk]
+      tags:
+      - Produk
       operationId: sesuaikanStok
-      summary: Menambah atau mengurangi stok produk
-      description: |
-        Perubahan positif menambah stok dan negatif mengurangi stok.
-        Stok tidak boleh menjadi negatif.
-        Alasan penjualan wajib memakai perubahan negatif.
-        Alasan restok wajib memakai perubahan positif.
-        Koreksi boleh positif atau negatif, tetapi bukan nol.
-        Operation_id yang sama dengan payload sama mengembalikan
-        hasil operasi sebelumnya tanpa mengubah stok lagi.
-        Operation_id yang sama dengan payload berbeda menghasilkan 409.
+      summary: Penjualan / restok / koreksi, retry dan konflik stok
+      description: "Perubahan positif menambah stok dan negatif mengurangi stok.\nStok tidak boleh menjadi negatif.\n\
+        Alasan penjualan wajib memakai perubahan negatif.\nAlasan restok wajib memakai perubahan positif.\nKoreksi\
+        \ boleh positif atau negatif, tetapi bukan nol.\nOperation_id yang sama dengan payload sama mengembalikan\n\
+        hasil operasi sebelumnya tanpa mengubah stok lagi.\nOperation_id yang sama dengan payload berbeda menghasilkan\
+        \ 409.\n\n\n**Cara uji:** buat produk stok 20 → pilih contoh penjualan -2 → ganti UUID jika operasi baru\
+        \ → Execute.\nHasil stok 18. Klik Execute lagi tanpa mengubah UUID/isi: 200 dengan snapshot yang sama, tidak\
+        \ ada stok/event baru.\nUbah perubahan menjadi -3 dengan UUID lama: 409 operation-id-konflik.\nPilih contoh\
+        \ restok dengan UUID lain: stok bertambah. Koreksi boleh positif/negatif tetapi tidak nol.\nSemua alasan\
+        \ menghasilkan event Outbox. Reporting hanya mencatat penjualan negatif; restok/koreksi bukan jurnal penjualan.\n\
+        Penolakan 404/409/422 tidak membuat operasi atau Outbox. Kegagalan simpan Outbox membatalkan transaksi stok\
+        \ (uji otomatis 500).\nPenjualan tidak menunggu relay/consumer; 200 bukan konfirmasi bahwa Reporting telah\
+        \ menerima event.\nTidak ada fitur pembatalan pesanan/retur otomatis di endpoint ini.\nTest: StokApiTest,\
+        \ ArahStokApiTest, KontrakStokApiTest, OutboxTest. RelayOutboxTest menguji publisher dengan mock.\n\n##\
+        \ Skenario penolakan 422\nContoh berikut sengaja invalid untuk uji negatif. Edit Request body secara manual.\
+        \ Jika UI memblokir, gunakan curl/test pada dokumen bukti.\n\n### Uji 422: operation_id hilang\n```json\n\
+        {\n  \"perubahan\": -1,\n  \"alasan\": \"penjualan\"\n}\n```\n\n### Uji 422: perubahan 0\n```json\n{\n \
+        \ \"operation_id\": \"66000000-0000-4000-8000-000000000006\",\n  \"perubahan\": 0,\n  \"alasan\": \"koreksi\"\
+        \n}\n```\n\n### Uji 422: penjualan +2\n```json\n{\n  \"operation_id\": \"66000000-0000-4000-8000-000000000007\"\
+        ,\n  \"perubahan\": 2,\n  \"alasan\": \"penjualan\"\n}\n```\n\n### Uji 422: restok -2\n```json\n{\n  \"\
+        operation_id\": \"66000000-0000-4000-8000-000000000008\",\n  \"perubahan\": -2,\n  \"alasan\": \"restok\"\
+        \n}\n```"
       parameters:
-        - name: sku
-          in: path
-          required: true
-          description: SKU internal produk
-          schema:
-            type: string
-          example: HJB-001
+      - name: sku
+        in: path
+        required: true
+        description: 'Wajib: SKU internal produk yang tersimpan. Contoh HJB-001. Ini parameter path, bukan endpoint
+          terpisah.'
+        schema:
+          type: string
+        examples:
+          tersedia:
+            summary: Produk contoh (buat dahulu)
+            value: HJB-001
+          tidakAda:
+            summary: Uji 404 jika SKU belum ada
+            value: HJB-999
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [operation_id, perubahan, alasan]
-              allOf:
-                - if:
-                    required: [alasan]
-                    properties:
-                      alasan:
-                        const: penjualan
-                  then:
-                    properties:
-                      perubahan:
-                        maximum: -1
-                - if:
-                    required: [alasan]
-                    properties:
-                      alasan:
-                        const: restok
-                  then:
-                    properties:
-                      perubahan:
-                        minimum: 1
-              properties:
-                operation_id:
-                  type: string
-                  format: uuid
-                  description: Identitas operasi yang tetap sama saat retry
-                  example: '11111111-1111-4111-8111-111111111111'
-                perubahan:
-                  type: integer
-                  not:
-                    const: 0
-                  example: -2
-                alasan:
-                  type: string
-                  enum: [penjualan, restok, koreksi]
-                  example: penjualan
+              $ref: '#/components/schemas/PenyesuaianStok'
+            examples:
+              Penjualan:
+                $ref: '#/components/examples/Penjualan'
+              Restok:
+                $ref: '#/components/examples/Restok'
+              KoreksiTambah:
+                $ref: '#/components/examples/KoreksiTambah'
+              KoreksiKurang:
+                $ref: '#/components/examples/KoreksiKurang'
+              StokKurang:
+                $ref: '#/components/examples/StokKurang'
+              KonflikId:
+                $ref: '#/components/examples/KonflikId'
       responses:
         '200':
           description: Hasil penyesuaian stok atau hasil operasi sebelumnya
@@ -203,38 +342,68 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [data]
+                required:
+                - data
                 properties:
                   data:
                     $ref: '#/components/schemas/Produk'
+              examples:
+                penjualan:
+                  $ref: '#/components/examples/HasilPenjualan'
+                retry:
+                  $ref: '#/components/examples/HasilRetry'
+                restok:
+                  $ref: '#/components/examples/HasilRestok'
         '404':
           description: Produk tidak ditemukan
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+              examples:
+                sku:
+                  $ref: '#/components/examples/StokSkuTidakAda'
         '409':
           description: Stok tidak cukup atau operation_id digunakan dengan payload berbeda
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+              examples:
+                stok:
+                  $ref: '#/components/examples/StokTidakCukup'
+                id:
+                  $ref: '#/components/examples/OperasiKonflik'
         '422':
           description: Isi permintaan tidak valid
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-
+              examples:
+                id:
+                  $ref: '#/components/examples/IdWajib'
+                nol:
+                  $ref: '#/components/examples/NolDitolak'
+                penjualan:
+                  $ref: '#/components/examples/ArahPenjualan'
+                restok:
+                  $ref: '#/components/examples/ArahRestok'
 components:
   schemas:
     Produk:
       type: object
-      required: [sku, nama, harga, stok, diperbarui_pada]
+      required:
+      - sku
+      - nama
+      - harga
+      - stok
+      - diperbarui_pada
       properties:
         sku:
           type: string
-          description: Identitas produk internal
+          description: SKU internal, bukan kode marketplace. Pembuatan wajib format ABC-123 dan unik. Mapping marketplace
+            belum dibuat.
           example: HJB-001
         nama:
           type: string
@@ -252,15 +421,18 @@ components:
           type: string
           format: date-time
           example: '2026-10-26T09:00:00+07:00'
-
     TambahProduk:
       type: object
-      required: [sku, nama, harga]
+      required:
+      - sku
+      - nama
+      - harga
       properties:
         sku:
           type: string
-          pattern: '^[A-Z]{3}-[0-9]{3}$'
-          description: SKU internal unik, bukan SKU marketplace
+          pattern: ^[A-Z]{3}-[0-9]{3}$
+          description: SKU internal, bukan kode marketplace. Pembuatan wajib format ABC-123 dan unik. Mapping marketplace
+            belum dibuat.
           example: HJB-001
         nama:
           type: string
@@ -277,10 +449,14 @@ components:
           minimum: 0
           default: 0
           example: 20
-
     Problem:
       type: object
-      required: [type, title, status, detail, instance]
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
       properties:
         type:
           type: string
@@ -307,3 +483,334 @@ components:
             type: array
             items:
               type: string
+    PenyesuaianStok:
+      type: object
+      required:
+      - operation_id
+      - perubahan
+      - alasan
+      allOf:
+      - if:
+          required:
+          - alasan
+          properties:
+            alasan:
+              const: penjualan
+        then:
+          properties:
+            perubahan:
+              maximum: -1
+      - if:
+          required:
+          - alasan
+          properties:
+            alasan:
+              const: restok
+        then:
+          properties:
+            perubahan:
+              minimum: 1
+      properties:
+        operation_id:
+          type: string
+          format: uuid
+          description: UUID satu operasi. Baru untuk operasi baru, tetap saat retry. Hash mencakup SKU, perubahan
+            dan alasan.
+          example: 11111111-1111-4111-8111-111111111111
+        perubahan:
+          type: integer
+          not:
+            const: 0
+          example: -2
+          description: Integer nonnol. Penjualan <= -1, restok >= 1, koreksi kedua arah dengan stok akhir >= 0.
+        alasan:
+          type: string
+          enum:
+          - penjualan
+          - restok
+          - koreksi
+          example: penjualan
+          description: Penjualan menghasilkan jurnal penjualan; restok/koreksi mengubah stok tetapi tidak dicatat
+            sebagai penjualan oleh Reporting.
+  examples:
+    DaftarKosong:
+      summary: 200 — belum ada produk
+      value:
+        data: []
+    DaftarLimitSatu:
+      summary: 200 — limit=1
+      value:
+        data:
+        - sku: HJB-001
+          nama: Produk Simulasi A
+          harga: 45000
+          stok: 20
+          diperbarui_pada: '2026-11-02T09:00:00+07:00'
+    DaftarSemua:
+      summary: 200 — contoh dua produk
+      value:
+        data:
+        - sku: HJB-001
+          nama: Produk Simulasi A
+          harga: 45000
+          stok: 20
+          diperbarui_pada: '2026-11-02T09:00:00+07:00'
+        - sku: HJB-002
+          nama: Produk Simulasi B
+          harga: 45000
+          stok: 20
+          diperbarui_pada: '2026-11-02T09:00:00+07:00'
+    LimitNol:
+      summary: 422 — limit=0
+      value:
+        type: https://rantauan.test/problem/validasi-gagal
+        title: Isi permintaan tidak valid
+        status: 422
+        detail: Satu atau lebih field tidak memenuhi kontrak.
+        instance: /api/v1/produk
+        errors:
+          limit:
+          - The limit field must be at least 1.
+    LimitBesar:
+      summary: 422 — limit=101
+      value:
+        type: https://rantauan.test/problem/validasi-gagal
+        title: Isi permintaan tidak valid
+        status: 422
+        detail: Satu atau lebih field tidak memenuhi kontrak.
+        instance: /api/v1/produk
+        errors:
+          limit:
+          - The limit field must not be greater than 100.
+    LimitTeks:
+      summary: 422 — limit=teks
+      value:
+        type: https://rantauan.test/problem/validasi-gagal
+        title: Isi permintaan tidak valid
+        status: 422
+        detail: Satu atau lebih field tidak memenuhi kontrak.
+        instance: /api/v1/produk
+        errors:
+          limit:
+          - The limit field must be an integer.
+    ProdukLengkap:
+      summary: Buat produk, stok 20
+      value:
+        sku: HJB-001
+        nama: Produk Simulasi A
+        harga: 45000
+        stok: 20
+    ProdukDefault:
+      summary: 'Buat produk tanpa stok: default 0'
+      value:
+        sku: HJB-002
+        nama: Produk Simulasi B
+        harga: 45000
+    ProdukDibuat:
+      summary: 201 — produk dibuat
+      value:
+        data:
+          sku: HJB-001
+          nama: Produk Simulasi A
+          harga: 45000
+          stok: 20
+          diperbarui_pada: '2026-11-02T09:00:00+07:00'
+    ProdukStokNol:
+      summary: 201 — stok default 0
+      value:
+        data:
+          sku: HJB-002
+          nama: Produk Simulasi B
+          harga: 45000
+          stok: 0
+          diperbarui_pada: '2026-11-02T09:00:00+07:00'
+    NamaWajib:
+      summary: 422 — nama wajib
+      value:
+        type: https://rantauan.test/problem/validasi-gagal
+        title: Isi permintaan tidak valid
+        status: 422
+        detail: Satu atau lebih field tidak memenuhi kontrak.
+        instance: /api/v1/produk
+        errors:
+          nama:
+          - The nama field is required.
+    SkuDuplikat:
+      summary: 422 — SKU telah digunakan
+      value:
+        type: https://rantauan.test/problem/validasi-gagal
+        title: Isi permintaan tidak valid
+        status: 422
+        detail: Satu atau lebih field tidak memenuhi kontrak.
+        instance: /api/v1/produk
+        errors:
+          sku:
+          - The sku has already been taken.
+    SkuFormat:
+      summary: 422 — format SKU tidak valid
+      value:
+        type: https://rantauan.test/problem/validasi-gagal
+        title: Isi permintaan tidak valid
+        status: 422
+        detail: Satu atau lebih field tidak memenuhi kontrak.
+        instance: /api/v1/produk
+        errors:
+          sku:
+          - The sku field format is invalid.
+    DetailProduk:
+      summary: 200 — produk tersedia
+      value:
+        data:
+          sku: HJB-001
+          nama: Produk Simulasi A
+          harga: 45000
+          stok: 20
+          diperbarui_pada: '2026-11-02T09:00:00+07:00'
+    SkuTidakAda:
+      summary: 404 — SKU tidak ditemukan
+      value:
+        type: https://rantauan.test/problem/tidak-ditemukan
+        title: Sumber daya tidak ditemukan
+        status: 404
+        detail: Tidak ada sumber daya pada alamat ini.
+        instance: /api/v1/produk/HJB-999
+    Penjualan:
+      summary: Penjualan -2 (awal 20 menjadi 18)
+      value:
+        operation_id: 66000000-0000-4000-8000-000000000001
+        perubahan: -2
+        alasan: penjualan
+      description: Ganti UUID untuk penjualan baru. Pertahankan UUID dan isi saat retry.
+    Restok:
+      summary: Restok +5
+      value:
+        operation_id: 66000000-0000-4000-8000-000000000002
+        perubahan: 5
+        alasan: restok
+      description: UUID berbeda dari penjualan. Reporting tidak mencatat sebagai penjualan.
+    KoreksiTambah:
+      summary: Koreksi +2
+      value:
+        operation_id: 66000000-0000-4000-8000-000000000003
+        perubahan: 2
+        alasan: koreksi
+      description: Bukan pembatalan otomatis pesanan.
+    KoreksiKurang:
+      summary: Koreksi -1
+      value:
+        operation_id: 66000000-0000-4000-8000-000000000004
+        perubahan: -1
+        alasan: koreksi
+      description: Stok akhir tetap harus tidak negatif.
+    StokKurang:
+      summary: 'Uji 409: penjualan -21 saat stok 20'
+      value:
+        operation_id: 66000000-0000-4000-8000-000000000005
+        perubahan: -21
+        alasan: penjualan
+      description: Pastikan stok awal kurang dari 21.
+    KonflikId:
+      summary: 'Uji 409: ID penjualan pertama, isi berubah -3'
+      value:
+        operation_id: 66000000-0000-4000-8000-000000000001
+        perubahan: -3
+        alasan: penjualan
+      description: Jalankan contoh Penjualan terlebih dahulu dengan UUID yang sama.
+    HasilPenjualan:
+      summary: 200 — stok 20 menjadi 18
+      value:
+        data:
+          sku: HJB-001
+          nama: Produk Simulasi A
+          harga: 45000
+          stok: 18
+          diperbarui_pada: '2026-11-02T09:00:00+07:00'
+    HasilRetry:
+      summary: 200 — retry memberi snapshot 18 yang sama
+      value:
+        data:
+          sku: HJB-001
+          nama: Produk Simulasi A
+          harga: 45000
+          stok: 18
+          diperbarui_pada: '2026-11-02T09:00:00+07:00'
+    HasilRestok:
+      summary: 200 — contoh stok 20 menjadi 25
+      value:
+        data:
+          sku: HJB-001
+          nama: Produk Simulasi A
+          harga: 45000
+          stok: 25
+          diperbarui_pada: '2026-11-02T09:00:00+07:00'
+    StokSkuTidakAda:
+      summary: 404 — penyesuaian SKU tidak ada
+      value:
+        type: https://rantauan.test/problem/tidak-ditemukan
+        title: Sumber daya tidak ditemukan
+        status: 404
+        detail: Tidak ada sumber daya pada alamat ini.
+        instance: /api/v1/produk/HJB-999/penyesuaian-stok
+    StokTidakCukup:
+      summary: 409 — stok tidak cukup
+      value:
+        type: https://rantauan.test/problem/stok-tidak-cukup
+        title: Penyesuaian stok ditolak
+        status: 409
+        detail: Stok tidak cukup untuk perubahan yang diminta.
+        instance: /api/v1/produk/HJB-001/penyesuaian-stok
+    OperasiKonflik:
+      summary: 409 — ID sama, isi berbeda
+      value:
+        type: https://rantauan.test/problem/operation-id-konflik
+        title: Penyesuaian stok ditolak
+        status: 409
+        detail: Operation_id sudah digunakan dengan isi berbeda.
+        instance: /api/v1/produk/HJB-001/penyesuaian-stok
+    IdWajib:
+      summary: 422 — operation_id wajib
+      value:
+        type: https://rantauan.test/problem/validasi-gagal
+        title: Isi permintaan tidak valid
+        status: 422
+        detail: Satu atau lebih field tidak memenuhi kontrak.
+        instance: /api/v1/produk/HJB-001/penyesuaian-stok
+        errors:
+          operation_id:
+          - The operation id field is required.
+    NolDitolak:
+      summary: 422 — perubahan tidak boleh nol
+      value:
+        type: https://rantauan.test/problem/validasi-gagal
+        title: Isi permintaan tidak valid
+        status: 422
+        detail: Satu atau lebih field tidak memenuhi kontrak.
+        instance: /api/v1/produk/HJB-001/penyesuaian-stok
+        errors:
+          perubahan:
+          - The selected perubahan is invalid.
+    ArahPenjualan:
+      summary: 422 — penjualan harus negatif
+      value:
+        type: https://rantauan.test/problem/validasi-gagal
+        title: Isi permintaan tidak valid
+        status: 422
+        detail: Satu atau lebih field tidak memenuhi kontrak.
+        instance: /api/v1/produk/HJB-001/penyesuaian-stok
+        errors:
+          perubahan:
+          - The perubahan field must not be greater than -1.
+    ArahRestok:
+      summary: 422 — restok harus positif
+      value:
+        type: https://rantauan.test/problem/validasi-gagal
+        title: Isi permintaan tidak valid
+        status: 422
+        detail: Satu atau lebih field tidak memenuhi kontrak.
+        instance: /api/v1/produk/HJB-001/penyesuaian-stok
+        errors:
+          perubahan:
+          - The perubahan field must be at least 1.
+externalDocs:
+  description: Bukti pengujian seluruh fitur dan langkah reproduksi
+  url: https://github.com/rekha0802/rantauan-uts/blob/master/docs/BUKTI_PENGUJIAN_LENGKAP.md

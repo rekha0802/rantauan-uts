@@ -113,3 +113,15 @@ Compose, volume dan port terpisah dari proyek utama.
 
 Hasil ini membuktikan setup clone pada komputer yang sama, bukan pengujian
 pada komputer kedua. Port pengujian berbeda dari port default README.
+
+
+## Pembaruan dokumentasi dan bukti 2 November 2026
+
+Kontrak Inventory kini versi 0.4.0. Empat operasi HTTP tidak berubah; dokumentasi limit, SKU, contoh respons dan skenario stok diperinci. Lihat [bukti lengkap](docs/BUKTI_PENGUJIAN_LENGKAP.md).
+
+- Inventory dijalankan ulang: 29 passed, 179 assertions.
+- Reporting dijalankan ulang: 7 passed, 14 assertions.
+- Spectral: tidak ada error pada 0.4.0.
+- Enam HTTP GET aktual: limit=1, limit 0/101/teks, SKU tidak ada dan detail SKU tersedia lulus; JSON disimpan dalam docs/bukti/.
+- Swagger /openapi.yaml melayani 0.4.0.
+- Ini pembaruan dokumentasi; tidak mengubah stok demo, menjalankan ulang semua skenario broker/DLQ, atau mengimplementasikan Import.
